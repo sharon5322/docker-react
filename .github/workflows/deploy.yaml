@@ -22,11 +22,13 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_KEY }}
           aws configure set default.region us-east-2
 
-      - name: Update EB environment version
+      - name: Upload to S3 and create application version
         run: |
-          aws elasticbeanstalk update-environment \
-            --environment-name Frontend-env \
-            --version-label ${{ github.sha }}
+          aws s3 cp deploy.zip s3://elasticbeanstalk-us-east-2-770926107807/deploy-${{ github.sha }}.zip
+          aws elasticbeanstalk create-application-version \
+            --application-name frontend \
+            --version-label ${{ github.sha }} \
+            --source-bundle S3Bucket=elasticbeanstalk-us-east-2-770926107807,S3Key=deploy-${{ github.sha }}.zip
 
       - name: Deploy to ElasticBeanstalk
         uses: einaregilsson/beanstalk-deploy@v18
@@ -37,5 +39,5 @@ jobs:
           environment_name: Frontend-env
           existing_bucket_name: elasticbeanstalk-us-east-2-770926107807
           region: us-east-2
-          version_label: Sample-${{ github.run_number }}-${{ github.sha }}
+          version_label: ${{ github.sha }}
           deployment_package: deploy.zip
